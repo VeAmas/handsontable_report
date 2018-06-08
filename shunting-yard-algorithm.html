@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+    <input id="input" type="text">
+    <button id="btn">run</button>
+
+    <script>
+        function sya () {
+            var formulaList = [
+                'SUM',
+                'MAX',
+                'MIN'
+            ]
+            var regexList = formulaList.map(v => new RegExp('^' + v))
+            var pop = function (obj) {
+                var str = obj.input.trim();
+                var value = str[0];
+                if (['+', '-', '*', '/', '^', '%', '(', ')', ','].indexOf(value) > -1) {
+                    if (outputList.length === 0) { return{type: 'number', input, next: '0'} }
+                    return {
+                        type: 'op',
+                        input: str.substr(1),
+                        next: value
+                    }
+                } else {
+                    for (var i = 0; i < formulaList.length; i++) {
+                        if (regexList[i].test(str)) {
+                            if (outputList.length === 0) { return{type: 'number', input: '+' + input, next: '0'} }
+                            var formula = formulaList[i]
+                            str = str.replace(regexList[i], '')
+                            return {
+                                type: 'op',
+                                subType: 'formula',
+                                input: str,
+                                next: formula
+                            }
+                        }
+                    }
+                    var next = str.match(/[0-9]+/)[0];
+                    return {
+                        type: 'number',
+                        input: str.substr(next.length),
+                        next
+                    }
+                }
+            }
+
+            function checkPriority (op) {
+                for (var i = 0; i < priorityList.length; i++) {
+                    if (priorityList[i].find(v => v === op)) {
+                        return i;
+                    }
+                }
+            }
+
+            function comparePriority(next) {
+                var last = operationList[operationList.length - 1]
+                if (last === '(') { 
+                    return false
+                }
+                var nextPriority = checkPriority(next)
+                var lastPriority = checkPriority(last)
+                if (formulaList.indexOf(next) > -1 && last === ',') {
+                    return false;
+                }
+                if (nextPriority === lastPriority) {
+                    return noPopOperations.indexOf(next) === -1;
+                } else if (nextPriority > lastPriority) {
+                    return true;
+                }
+            }
+
+            var input = document.getElementById('input').value;
+            var next;
+            var type;
+            var outputList = [];
+            var operationList = [];
+            var priorityList = [
+                ['(', ')', ','],
+                formulaList,
+                ['^'],
+                ['*', '/'],
+                ['%'],
+                ['+', '-']
+            ]
+            var noPopOperations = [',', '^'];
+
+
+            while (input.length) {
+                ({next, type, input, subType} = pop({input}))
+                if (type === 'op') {
+                    if (next === ')') {
+                        while (operationList.length > 0 && operationList[operationList.length - 1] != '(') {
+                            var last = operationList.pop()
+                            outputList.push({value: last, type});                            
+                        }
+                        if (operationList.length === 0) {
+                            new Error('error');
+                            return;
+                        }
+                        operationList.pop()
+                        var formulaLike =  operationList[operationList.length - 1]
+                        if (formulaList.indexOf(formulaLike) > -1) {
+                            operationList.pop();
+                            outputList.push({value: formulaLike, type: 'formula'});
+                        }
+                    } else {
+                        while (operationList.length > 0 && comparePriority(next)) {
+                            var last = operationList.pop()
+                            outputList.push({value: last, type: subType || type});
+                        }
+                        operationList.push(next)
+                    }
+                } else {
+                    outputList.push({value: +next, type});
+                }
+            }
+            if (operationList.length > 0) {
+                operationList.reverse().forEach(v => outputList.push({value: v, type: 'op'}));
+            }
+            console.log(outputList);
+            console.log(calc(outputList))
+            return outputList
+        }
+        function calc (list) {
+            var formulaList = {
+                SUM (arg) {
+                    return arg.reduce((o, n) => o + n, 0)
+                },
+                MAX (arg) {
+
+                },
+                MIN (arg) {
+
+                }
+            }
+            var resultList = []
+            list.forEach(v => {
+                var res
+                if (v.type === 'op') {
+                    var n2 = resultList.pop()
+                    var n1 = resultList.pop()
+                    switch (v.value) {
+                        case '+': {
+                            res = n1 + n2
+                            break;
+                        }
+                        case '-': {
+                            res = n1 - n2
+                            break;
+                        }
+                        case '*': {
+                            res = n1 * n2
+                            break;
+                        }
+                        case '/': {
+                            res = n1 / n2 
+                            break;
+                        }
+                        case '^': {
+                            res = Math.pow(n1, n2)
+                            break;
+                        }
+                        case '%': {
+                            res = n1 % n2
+                            break;
+                        }
+                        case ',': {
+                            if (!Array.isArray(n2)) {
+                                n2 = [n2]
+                            }
+                            res = n2.concat(n1)
+                        }
+                    }                    
+                    resultList.push(res)
+                } else if (v.type === 'formula') {
+                    var n = resultList.pop();
+                    res = formulaList[v.value](n)  
+                    resultList.push(res)
+                } else {
+                    resultList.push(v.value)
+                }
+            })
+            return resultList[0]
+        }
+
+        document.getElementById('btn').addEventListener('click', sya)
+    </script>
+</body>
+</html>

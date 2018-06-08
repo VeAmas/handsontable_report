@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BuildTable</title>
+    <style>
+        td{
+            border-top-width: 0;
+            border-left-width: 0;
+            border-right: 1px solid #CCC;
+            border-bottom: 1px solid #CCC;
+            empty-cells: show;
+            line-height: 21px;
+            padding: 0 4px 0 4px;
+            background-color: #FFF;
+            vertical-align: top;
+            overflow: hidden;
+            outline-width: 0;
+            white-space: pre-line;
+            background-clip: padding-box;
+        }
+    </style>
+</head>
+<body>
+    <table id="table" border="1" cellspacing="0">
+        
+    </table>
+    <script>
+
+    var a = {
+        b: {
+            B1: 12,
+            B2: 13,
+            D: 50,
+            E: 36,
+            F: 10
+        }
+    }
+    var b = {
+        b: {
+            B1: 51,
+            B2: 15,
+            D: 43,
+            E: 10,
+            F: 61
+        }
+    }
+
+    function getValue (path) {
+        path = path.split('.');
+        var obj = window;
+        path.forEach(v => {
+            obj = obj[v];
+        })
+        return obj;
+    }
+
+    function isInMerged (i, j) {
+        var inside = false
+        report.mergeCells.forEach(v => {
+            if (i >= v.col && 
+                (i <= v.col + v.colspan - 1) &&
+                j >= v.row &&
+                (j <= v.row + v.rowspan - 1)) {
+                if (i === v.col && j === v.row) {
+                    inside = {
+                        colspan: v.colspan,
+                        rowspan: v.rowspan
+                    };
+                } else {
+                    inside = true
+                }
+            }
+        })
+        return inside
+    }
+
+    // 从excel坐标系变为直角坐标系 AZ11 => (51,11)
+    function ExcelCoordToCartesian (coord) {
+        var col = coord.match(/[A-Z]{1,}/)[0];
+        col = col.split('').map(v => v.charCodeAt() - 64).reduce((o, n) => o * 26 + n, 0) - 1
+
+        var row = +coord.match(/[0-9]{1,}/)[0] - 1;
+        return {col, row}
+    }
+
+    var functions = {
+        MAX () {
+            var max = -Infinity;
+            for (var i = 0; i < arguments.length; i++) {
+                var v = arguments[i];
+                if (/^[A-Z]{1,}[0-9]{1,}$/.test(v)) {
+                    var {col, row} = ExcelCoordToCartesian(v);
+                    v = report.tableBodyData[row][col];
+                } 
+                if (v > max) {
+                    max = v;
+                }
+            }
+            return max;
+        },
+        SUM () {
+            var sum = 0;
+            for (var i = 0; i < arguments.length; i++) {
+                var v = arguments[i];
+                if (/^[A-Z]{1,}[0-9]{1,}$/.test(v)) {
+                    var {col, row} = ExcelCoordToCartesian(v);
+                    v = report.tableBodyData[row][col];
+                } 
+                sum += v;
+            }
+            return sum;
+        },
+        GET (arg) {
+            return paramList[arg];
+        },
+
+    }
+
+    var report = JSON.parse(localStorage.getItem('report'));
+    var paramList = {};
+    report.paramList.forEach(v => {paramList[v] = getValue(v)});
+
+    report.formulaList.forEach(v => {
+        var value = functions[v[1]].apply(null, v.slice(2))
+        var [row, col] = v[0].split(',');
+        report.tableBodyData[row][col] = value;
+
+    })
+
+    for (var i = 0; i < report.tableHeight; i++) {
+        var tr = document.createElement('tr');
+        document.getElementById('table').append(tr)
+        for (var j = 0; j < report.tableWidth; j++) {
+            var inside = isInMerged(j, i);
+            if (inside === false || inside.rowspan) {
+                var td = document.createElement('td');
+                if (inside.rowspan) {
+                    td.rowSpan = inside.rowspan;
+                    td.colSpan = inside.colspan;
+                }
+                var data;
+                if (i < report.tabelHeaderHeight) {
+                    data = report.tableHeaderData[i] && report.tableHeaderData[i][j] || '';
+                } else {
+                    data = report.tableBodyData[i - report.tabelHeaderHeight] && report.tableBodyData[i - report.tabelHeaderHeight][j] || '';
+                }
+
+                var style = report.styleList[i + ',' + j];
+                if (style) {
+                    for (var key in style) {
+                        style[key] && (td.style[key] = style[key])
+                    }
+                }
+                var height = report.customRowHeight.filter(function (v) { return v[0] === i; })[0]
+                var width = report.customColWidth.filter(function (v) { return v[0] === j; })[0]
+
+                td.width = (width ? width[1] : 105) - 1;
+                td.height = (height ? height[1] : 23) - 1;
+                td.innerHTML = data;
+                tr.append(td);
+            }
+        }
+    }
+
+
+    </script>
+</body>
+</html>
