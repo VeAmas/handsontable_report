@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function dfs (list) {
+            var listReserved = Object.assign([], list);
+            var stack = [];
+            var queue = [];
+            while (list.some(v => !v.visited)) {
+                var firstNode = list.find(v => !v.visited);
+                stack.push(firstNode);
+
+                while (stack.length > 0) {
+                    var curNode = stack.pop();
+                    if (!curNode) {
+                        queue.pop();
+                        continue;
+                    }
+                    stack.push(null);
+                    var index = queue.indexOf(curNode);
+                    queue.push(curNode);
+                    if (index > -1) {
+                        console.error('有闭环:' + queue.filter((v, i) => i >= index).map(v => v.name).join('->'));
+                        return;
+                    }
+                    curNode.visited = true;
+                    if (curNode.children) {
+                        var children = curNode.children.map(v => list.find(u => u.name === v)).filter(v => v);
+                        if (children.length > 0) {
+                            stack = stack.concat(children)
+                        }                        
+                    }
+                }
+            }
+        }
+
+        function topoSort (list) {
+            list.forEach(v => v.in = []);
+            list.forEach(v => {
+                var children = v.children.map(w => list.find(u => u.name === w)).filter(w => w);
+                v.out = children;
+                children.forEach(u => u.in.push(v))
+            })
+
+            var result = [];
+            while (list.length > 0) {
+                var curNode = list.find(v => v.in.length === 0)
+                result.push(curNode);
+                list.splice(list.indexOf(curNode), 1)
+                curNode.out.forEach(v => {
+                    v.in.splice(v.in.indexOf(curNode), 1)
+                })
+            }
+            return result;
+        }
+
+        var list = [
+            {name: 'A1', children: ['A3', 'A11']},
+            {name: 'A2', children: ['A10']},
+            {name: 'A3', children: ['A2']},
+            {name: 'A4', children: ['A14']},
+            {name: 'A5', children: ['A10', 'A7', 'A6']},
+            {name: 'A6', children: ['A12']},
+            {name: 'A7', children: ['A13']},
+            {name: 'A8', children: ['A7']},
+            {name: 'A9', children: ['A8']},
+            {name: 'A10', children: ['A9','A8']},
+            {name: 'A11', children: ['A4', 'A5']},
+            {name: 'A19', children: ['A20']},
+            {name: 'A20', children: ['A21']}
+        ]
+
+        topoSort(list);
+    </script>
+</body>
+</html>

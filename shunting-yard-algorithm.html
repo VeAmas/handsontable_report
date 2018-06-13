@@ -20,7 +20,7 @@
                 var str = obj.input.trim();
                 var value = str[0];
                 if (['+', '-', '*', '/', '^', '%', '(', ')', ','].indexOf(value) > -1) {
-                    if (outputList.length === 0) { return{type: 'number', input, next: '0'} }
+                    if (outputList.length === 0 && ['+', '-'].indexOf(value) > -1) { return{type: 'number', input, next: '0'} }
                     return {
                         type: 'op',
                         input: str.substr(1),
@@ -40,11 +40,25 @@
                             }
                         }
                     }
-                    var next = str.match(/[0-9]+/)[0];
+                    var next;
+                    var subType;
+                    if (/^\${{[\S\s]*?}}/.test(str)) {
+                        next = str.match(/^(\${{[\S\s]*?}})/)[1];
+                        str = str.replace(/^(\${{[\S\s]*?}})/, '');
+                        subType = 'expression';
+                    } else if (/^[A-Z]{1,}[0-9]{1,}/.test(str)) {
+                        next = str.match(/^[A-Z]{1,}[0-9]{1,}/)[0];
+                        str = str.replace(/^[A-Z]{1,}[0-9]{1,}/, '');
+                        subType = 'cell';
+                    } else {
+                        next = str.match(/[0-9]+/)[0];
+                        str = str.substr(next.length)
+                    }
                     return {
                         type: 'number',
-                        input: str.substr(next.length),
-                        next
+                        input: str,
+                        next,
+                        subType
                     }
                 }
             }
@@ -116,14 +130,14 @@
                         operationList.push(next)
                     }
                 } else {
-                    outputList.push({value: +next, type});
+                    outputList.push({value: isNaN(+next) ? next : (+next), type: subType || type});
                 }
             }
             if (operationList.length > 0) {
                 operationList.reverse().forEach(v => outputList.push({value: v, type: 'op'}));
             }
             console.log(outputList);
-            console.log(calc(outputList))
+            // console.log(calc(outputList))
             return outputList
         }
         function calc (list) {

@@ -5,6 +5,7 @@
     <title>BuildTable</title>
     <style>
         td{
+            font-size: 14px;
             border-top-width: 0;
             border-left-width: 0;
             border-right: 1px solid #CCC;
@@ -47,6 +48,7 @@
     }
 
     function getValue (path) {
+        path = path.match(/\$\(([\s\S]*?)\)/)[1];
         path = path.split('.');
         var obj = window;
         path.forEach(v => {
@@ -84,48 +86,88 @@
         return {col, row}
     }
 
+
+    function calcFormular (list) {
+        var resultList = []
+        list.forEach(v => {
+            var res
+            if (v.type === 'o') {
+                var n2 = resultList.pop()
+                var n1 = resultList.pop()
+                switch (v.value) {
+                    case '+': {
+                        res = n1 + n2
+                        break;
+                    }
+                    case '-': {
+                        res = n1 - n2
+                        break;
+                    }
+                    case '*': {
+                        res = n1 * n2
+                        break;
+                    }
+                    case '/': {
+                        res = n1 / n2 
+                        break;
+                    }
+                    case '^': {
+                        res = Math.pow(n1, n2)
+                        break;
+                    }
+                    case '%': {
+                        res = n1 % n2
+                        break;
+                    }
+                    case ',': {
+                        if (!Array.isArray(n2)) {
+                            n2 = [n2]
+                        }
+                        res = n2.concat(n1)
+                    }
+                }                    
+                resultList.push(res)
+            } else if (v.type === 'm') {
+                var n = resultList.pop();
+                if (!Array.isArray(n)) { n = [n] };
+                res = functions[v.value](n)  
+                resultList.push(res)
+            } else if (v.type === 'c') {
+                var [row, col] = v.value.split(',')
+                var n = tableData[row][col]
+                resultList.push(n)
+            } else if (v.type === 'e') {
+                resultList.push(paramList[v.value])
+            } else {
+                resultList.push(v.value)
+            }
+        })
+        return resultList[0]
+    }
+
     var functions = {
-        MAX () {
-            var max = -Infinity;
-            for (var i = 0; i < arguments.length; i++) {
-                var v = arguments[i];
-                if (/^[A-Z]{1,}[0-9]{1,}$/.test(v)) {
-                    var {col, row} = ExcelCoordToCartesian(v);
-                    v = report.tableBodyData[row][col];
-                } 
-                if (v > max) {
-                    max = v;
-                }
-            }
-            return max;
+        MAX (arg) {
+            return Math.max.apply(null, arg);
         },
-        SUM () {
-            var sum = 0;
-            for (var i = 0; i < arguments.length; i++) {
-                var v = arguments[i];
-                if (/^[A-Z]{1,}[0-9]{1,}$/.test(v)) {
-                    var {col, row} = ExcelCoordToCartesian(v);
-                    v = report.tableBodyData[row][col];
-                } 
-                sum += v;
-            }
-            return sum;
+        SUM (arg) {
+            return arg.reduce(function (o, n) { return o + n; }, 0);            
         },
-        GET (arg) {
-            return paramList[arg];
-        },
+        TOFIXED (arg) {
+            return Number(Number(arg[1]).toFixed(arg[0]))
+        }
 
     }
 
     var report = JSON.parse(localStorage.getItem('report'));
     var paramList = {};
+    var tableData = report.tableHeaderData.concat(report.tableBodyData)
+
     report.paramList.forEach(v => {paramList[v] = getValue(v)});
 
     report.formulaList.forEach(v => {
-        var value = functions[v[1]].apply(null, v.slice(2))
-        var [row, col] = v[0].split(',');
-        report.tableBodyData[row][col] = value;
-
+        var value = calcFormular(v.formula)
+        var [row, col] = v.pos.split(',')
+        tableData[row][col] = value
     })
 
     for (var i = 0; i < report.tableHeight; i++) {
@@ -139,12 +181,8 @@
                     td.rowSpan = inside.rowspan;
                     td.colSpan = inside.colspan;
                 }
-                var data;
-                if (i < report.tabelHeaderHeight) {
-                    data = report.tableHeaderData[i] && report.tableHeaderData[i][j] || '';
-                } else {
-                    data = report.tableBodyData[i - report.tabelHeaderHeight] && report.tableBodyData[i - report.tabelHeaderHeight][j] || '';
-                }
+                var data = tableData[i] && tableData[i][j] || '';
+
 
                 var style = report.styleList[i + ',' + j];
                 if (style) {
