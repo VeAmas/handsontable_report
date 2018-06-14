@@ -40,9 +40,19 @@
           this.cellReference = []
         }
         ReportEditor.prototype = {
+          // 获取某个单元格的DOM
           getCell (row, col) {
             return this.hot.getCell(row, col)
           },
+
+          /**
+           * 判断某一个单元格是否是被合并的
+           * 如果是合并单元格左上角那个一就返回{colspan, rowspan}
+           * 如果是合并的但不是左上角就返回true
+           * 否则返回false
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           isInMerged (row, col) {
             var inside = false
             this.hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells.forEach(v => {
@@ -62,6 +72,12 @@
             })
             return inside
           },
+          /**
+           * 返回该单元格被合并之后,合并结果的左上角那一个的坐标.
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           * @return   {col, row}
+           */
           getMergedHead (row, col) {
             var mergedCells = this.hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells;
             for (var i = 0; i < mergedCells.length; i++) {
@@ -74,29 +90,41 @@
               }
             }
           },
-          /* option{
-               skipMergedCell: 当为真时,只在非merge的单元格执行回调
-             } */
+          /**
+           * 遍历所有被选中的单元格
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           * option{
+           *   skipMergedCell: 当为真时,只在非merge的单元格执行回调
+           * } 
+           */
           traversalSelectedCell (callback, options) {
             options = options || {}
+            // 获取被选中的单元格组
             var selected = this.hot.getSelected();
             if (!selected) { return; }
-            for (var i = 0; i < selected.length; i++) {            
+            // 遍历每个组
+            for (var i = 0; i < selected.length; i++) { 
+              // 获取该组的左上角坐标(min)和右下角坐标(max)
               min = [Math.min(selected[i][0], selected[i][2]), Math.min(selected[i][1], selected[i][3])];
               max = [Math.max(selected[i][0], selected[i][2]), Math.max(selected[i][1], selected[i][3])];
+              // 通过min和max遍历一个矩形
               for (var row = min[0]; row <= max[0]; row++) {
                 for (var col = min[1]; col <= max[1]; col++) {
+                  // 判断该格是否是顶部/最左边/底部/最右边
                   var param = {
                     isTop: row === min[0],
                     isRight: col === max[1],
                     isBottom: row === max[0],
                     isLeft: col === min[1]
                   }
+                  // 如果参数中有skipMergedCell则判读是否是合并单元格中.
                   if (options.skipMergedCell) {
                     var inside = this.isInMerged(row, col)
                     if (!inside) {
                       callback(row, col, param);
                     } else if (inside.rowspan) {
+                      // 如果合并单元格的左上角,则改变param的参数
                       param.merged = true;
                       param.rowspan = inside.rowspan;
                       param.colspan = inside.colspan;
@@ -111,25 +139,46 @@
               }
             }
           },
+          /**
+           * 设置样式
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           * @param    {object}   style (标准的sytle对象)
+           */
           setStyle (style) {
             this.traversalSelectedCell((row, col) => {
+              // 遍历选中的单元格,设置样式.
               if (!this.styleList[row + ',' + col]) { this.styleList[row + ',' + col] = {}; }
               
               for (var key in style) {
                 this.styleList[row + ',' + col][key] = style[key]
               }
             })
+            // 重新渲染表格
             this.hot.render();
           },
+          /**
+           * 设置边框
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           * @param    {object}   border {
+           *                        type: Number (边框类型 0: 无边框, 1: 上边框, 2: 右边框, 3: 下边框, 4: 左边框, 5: 周围边框, 6: 全部边框),
+           *                        color: String (颜色)
+           *                      }
+           */
           setBorder (border) {
+            // 新建某个单元格的样式(没有的话)
             var hasStyle = (row, col) => {
               if (!this.styleList[row + ',' + col]) { this.styleList[row + ',' + col] = {}; }
               return true;
             }
 
+            // 将合并单元格的样式代码抽出来的方法
+            // 比如我要设置上边框,但是上面是一个合并了的单元格,那么就应该设置这个合并的单元格的下边框
             var setMergedBorder = (row, col, css, color) => {
               var inside = this.isInMerged(row, col);
               if (inside === true) {
+                // 计算并替换成该合并单元格的左上角的坐标
                 var mergedHead = this.getMergedHead(row, col);
                 row = mergedHead.row;
                 col = mergedHead.col;
@@ -143,24 +192,37 @@
               }
             }
 
-            if (this.hot.getSelected().length > 1) { return; }
+            // if (this.hot.getSelected().length > 1) { return; }
+            
+            // 遍历被选择的单元格设置样式
             this.traversalSelectedCell((row, col, param) => {
+              // 清除边框和设置所有边框的情况
               if (border.type === 0 || border.type === 6) {
+                // 所选区域的第一行且不是整个表的第一行:
                 if (param.isTop && row > 0 && (border.type === 0 ? this.styleList[(row - 1) + ',' + col] : hasStyle((row - 1), col))) {
                   setMergedBorder(row - 1, col, 'borderBottomColor', border.type === 6 && border.color);
                 }
+                // 所选区域的第一列且不是A列:
                 if (param.isLeft && col > 0 && (border.type === 0 ? this.styleList[row + ',' + (col - 1)] : hasStyle(row, col - 1))) {
                   setMergedBorder(row, col - 1, 'borderRightColor', border.type === 6 && border.color);
                 }
-                if ((col === 0 || row === 0) && (border.type === 0 ? this.styleList[row + ',' + col] : hasStyle(row, col))) {
+                // A列
+                if (col === 0 && (border.type === 0 ? this.styleList[row + ',' + col] : hasStyle(row, col))) {
                   if (border.type === 0) {
-                    delete this.styleList[row + ',' + col].borderTopColor
                     delete this.styleList[row + ',' + col].borderLeftColor
                   } else {
-                    this.styleList[row + ',' + col].borderTopColor = border.color
                     this.styleList[row + ',' + col].borderLeftColor = border.color
                   }
                 }
+                // 整个表的第一行
+                if (row === 0 && (border.type === 0 ? this.styleList[row + ',' + col] : hasStyle(row, col))) {
+                  if (border.type === 0) {
+                    delete this.styleList[row + ',' + col].borderTopColor
+                  } else {
+                    this.styleList[row + ',' + col].borderTopColor = border.color
+                  }
+                }
+                // 其他的项  
                 if (border.type === 0 ? this.styleList[row + ',' + col] : hasStyle(row, col)) {
                   if (border.type === 0) {
                     delete this.styleList[row + ',' + col].borderRightColor
@@ -172,6 +234,7 @@
                 }
               }
               else {
+                  // 上边框或者周围边框
                   if ((border.type === 1 || border.type === 5) && param.isTop) {
                       for (var i = 0; i < (param.colspan || 1); i++) {
                         if (row > 0) {
@@ -182,14 +245,17 @@
                         }
                       }
                   }
+                  // 右边框或者周围边框
                   if ((border.type === 2 || border.type === 5) && param.isRight) {
                     hasStyle(row, col)
                     this.styleList[row + ',' + col].borderRightColor = border.color
                   }
+                  // 下边框或者周围边框
                   if ((border.type === 3 || border.type === 5) && param.isBottom) {
                     hasStyle(row, col)
                     this.styleList[row + ',' + col].borderBottomColor = border.color
                   }
+                  // 左边框或者周围边框
                   if ((border.type === 4 || border.type === 5) && param.isLeft) {
                       for (var i = 0; i < (param.rowspan || 1); i++) {
                         if (col > 0) {
@@ -204,12 +270,28 @@
             }, {skipMergedCell: true})
             this.hot.render();
           },
+          /**
+           * 在读取时填充空白的data
+           * 比如1行填充到20行
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           fillEmptyData (data, width, height) {
             data = data.concat(new Array(height).join('.').split('.').map(v => []).slice(0, height));
             return data;
           },
+          /**
+           * 删除空白行  
+           * 传入的data是一个wdith*height的二维数组 
+           * 最后要返回尽量少的数据. 
+           * 具体就是把有数据的最后一行后面的行删掉 
+           * 同一行里，把有数据的最后一个后面的删掉. 
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           arrayTrim (data) {
             var hasDataToken = false;
+            // 倒序
             for (var i = data.length - 1; i >= 0; i--) {
               if (data[i].some(v => v)) { 
                 hasDataToken = true;
@@ -219,25 +301,41 @@
                 }
                 continue; 
               }
+              // 到这里肯定是一个空行
+              // 已经是有数据的最后一行上面的话置空
               if (hasDataToken) {
                 data[i].length = 0;
-              } else {
+              } else { // 否则删掉这一行
                 data.length --;
               }
             }
           },
+          /**
+           * 获取公式列表
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           getFormulas (array) {
             var formulaList = [];
+            // 遍历每个有数据的单元格，
             array.forEach((v, i) => {
               v.forEach((u, j) => {
+                // 筛选{{=....}}这样的东西
                 if (/^{{=.*}}$/.test(u)) {
                   var rawFormula = u.match(/^{{=(.*)}}$/)[1];
+                  // 通过算法计算出逆波兰表达式
                   formulaList.push({pos: i + ',' + j, formula: sya(rawFormula)});
                 }
               })
             })
             return formulaList;
           },
+          /**
+           * 获取用到的后台查询表达式列表
+           * 即从公式列表中筛选出type为e（expression）的表达式
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           getParamList (formulaList) {
             var paramList = [];
             formulaList.forEach(v => {
@@ -249,6 +347,11 @@
             })
             return paramList;
           },
+          /**
+           * 将直角坐标系转化为excel坐标 (0,0) => A1
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           cartesianToExcelCoord (row, col) {
             function mod26 (num) {
               return num % 26 === 0 ? 26 : num % 26;
@@ -262,12 +365,22 @@
             }
             return _col + row;
           },
+          /**
+           * 将excel坐标转化为直角坐标系 A1 => (0,0)
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           excelCoordToCartesian (coord) {
             var col = coord.match(/[A-Z]{1,}/)[0];
             col = col.split('').map(v => v.charCodeAt() - 64).reduce((o, n) => o * 26 + n, 0) - 1
             var row = +coord.match(/[0-9]{1,}/)[0] - 1
             return [row, col]
           },
+          /**
+           * 获取选中的单元格的excel坐标
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           getSelectedCellCoord () {
             var coordList = [];
             this.traversalSelectedCell((row, col) => {
@@ -276,6 +389,11 @@
             }, {skipMergedCell: true})
             document.getElementById('formulaEditor').value = coordList.join(',');
           },
+          /**
+           * 计算该单元格所引用的单元格列表
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           checkReference () {
             var selected = this.hot.getSelected()[0];
 
@@ -285,6 +403,12 @@
             this.cellReference = coords ? coords.map(v => this.excelCoordToCartesian(v)) : [];
             this.hot.render();
           },
+          /**
+           * 获取所有单元格的应用列表
+           * 返回一个数组: [{ name: 'A1', children: ['A2', 'A3'] }]
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           getReferenceCellsList (data) {
             var referenceCellsList = []
             data.forEach((v, row) => {
@@ -302,41 +426,65 @@
             })
             return referenceCellsList;
           },
+          /**
+           * 深度优先搜索,判断是否存在循环引用
+           * 参数是getReferenceCellsList方法返回的列表
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           depthFirstSearch (list) {
             var listReserved = Object.assign([], list);
+            // 栈保存了需要遍历的节点
             var stack = [];
+            // 队列保存了现在遍历的路径
             var queue = [];
+            // 只要列表中有没有访问过的节点就继续循环
             while (list.some(v => !v.visited)) {
+              // 拿一个未访问过的节点,并压入栈
               var firstNode = list.find(v => !v.visited);
               stack.push(firstNode);
 
               while (stack.length > 0) {
+                // 如果栈顶为空则从队列中弹出一个元素
                 var curNode = stack.pop();
                 if (!curNode) {
                   queue.pop();
                   continue;
                 }
+                // 遍历一个节点则向栈中压入一个null
+                // 用于连续回退时缩短queue
                 stack.push(null);
                 var index = queue.indexOf(curNode);
-                queue.push(curNode);
+                queue.push(curNode); // 同时把当前的节点压入queue
+                // 如果queue中已经有了当前节点则形成闭环,即循环调用.
                 if (index > -1) {
                   console.error('有闭环:' + queue.filter((v, i) => i >= index).map(v => v.name).join('->'));
                   return false;
                 }
                 curNode.visited = true;
                 if (curNode.children) {
+                  // 将儿子压入栈
                   var children = curNode.children.map(v => list.find(u => u.name === v)).filter(v => v);
                   if (children.length > 0) {
                     stack = stack.concat(children)
-                  }            
+                  }
                 }
               }
             }
             return true;
           },    
+          /**
+           * 有向图的拓扑排序,产生一个不会发生死锁的资源获取队列
+           * 参数是getReferenceCellsList方法返回的列表
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           topoSort (list) {
             list.forEach(v => v.out = []);
             list.forEach(v => {
+              //  计算每一个节点的出度和入度
+              //  出度out是有哪些节点依赖该节点
+              //  入度in是该节点依赖哪些节点 即 children
               var children = v.children.map(w => list.find(u => u.name === w)).filter(w => w);
               v.in = children;
               children.forEach(u => u.out.push(v))
@@ -344,7 +492,9 @@
 
             var result = [];
             while (list.length > 0) {
+              // 选择一个入度为0的
               var curNode = list.find(v => v.in.length === 0)
+              // 压入结果集, 删除出度对应节点的 对于该节点的 入度(删除该节点和子节点的弧)
               result.push(curNode);
               list.splice(list.indexOf(curNode), 1)
               curNode.out.forEach(v => {
@@ -353,10 +503,16 @@
             }
             return result;
           },
+          /**
+           * 保存表格
+           * @Author   chenht
+           * @DateTime 2018-06-14
+           */
           save () {
             var {tableWidth, tableHeight, tabelHeaderHeight, styleList, customColWidth, customRowWidth} = this;
             var saveData = {tableWidth, tableHeight, tabelHeaderHeight, styleList, customColWidth, customRowWidth};
 
+            // 保存合并的单元格
             saveData.mergeCells = this.hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells;
             saveData.mergeCells = saveData.mergeCells.map(v => ({
               col: v.col,
@@ -368,17 +524,21 @@
             saveData.tableHeaderData = tabelHeaderHeight > 0 ? this.hot.getData(0, 0, tabelHeaderHeight - 1, tableWidth - 1) : [];
             saveData.tableBodyData = this.hot.getData(tabelHeaderHeight, 0, tableHeight - 1, tableWidth - 1);
             
+            // 删除数据的空白部分
             this.arrayTrim(saveData.tableHeaderData);
             this.arrayTrim(saveData.tableBodyData);
 
             var referenceCellsList = this.getReferenceCellsList(Object.assign([], saveData.tableHeaderData, saveData.tableBodyData));
+            // 判断是否有循环引用
             if (!this.depthFirstSearch(referenceCellsList)) { return; }
 
+            // 拓扑排序队列
             var topoSortList = this.topoSort(referenceCellsList).map(v => {
               var coord = this.excelCoordToCartesian(v.name)
               return coord[0] + ',' + coord[1];
             });
 
+            // 对拓扑排序队列中的单元格单独排序,放在公式列表的最后.
             saveData.formulaList = this.getFormulas(saveData.tableBodyData);
             saveData.paramList = this.getParamList(saveData.formulaList);
 
@@ -392,6 +552,7 @@
                 var posB = topoSortList.findIndex(v => v === b.pos);
                 return posA - posB;
             })
+            // 将公式中的excel坐标系转换成直角坐标系
             sortedFormula.forEach(w => {
               w.formula.forEach(v => {
                 if (v.type !== 'c') { return; }
@@ -401,6 +562,7 @@
             })
             saveData.formulaList = saveData.formulaList.concat(sortedFormula);
 
+            // 保存自定义的行高和列宽
             saveData.customRowHeight = [];
             saveData.customColWidth = [];
             for (var i = 0; i < saveData.tableHeight; i++) {
@@ -457,7 +619,7 @@
                   about: {name: 'about'}
                 }
               },
-              autoRowSize: true,
+              // autoRowSize: true,
               manualColumnMove: true,
               manualRowMove: true,
               manualColumnResize: true,

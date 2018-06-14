@@ -94,12 +94,13 @@
             var outputList = [];
             var operationList = [];
             var priorityList = [
-                ['(', ')', ','],
+                ['(', ')'],
                 formulaList,
                 ['^'],
                 ['*', '/'],
                 ['%'],
-                ['+', '-']
+                ['+', '-'],
+                [',']
             ]
             var noPopOperations = [',', '^'];
 
@@ -125,7 +126,7 @@
                     } else {
                         while (operationList.length > 0 && comparePriority(next)) {
                             var last = operationList.pop()
-                            outputList.push({value: last, type: subType || type});
+                            outputList.push({value: last, type: type});
                         }
                         operationList.push(next)
                     }
