@@ -8,15 +8,223 @@
     <script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts.js"></script>
     <script src="createCharts.js"></script>
     <script src="shunting-yard-algorithm.js"></script>
-    <style>
+    <link rel="stylesheet" type="text/css" href="./font/iconfont.css">
+    <style type="text/css">
       .ht_master tr > td {
         white-space: nowrap;
         overflow: hidden;
+        cursor: cell;
+      }
+    
+      .tool-box{
+        cursor: default;
+      }
+
+      .tool-box > a{
+        cursor: pointer;
+        font-family: 'Times New Roman';
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .tool-box > a:hover{
+        background-color: #ddd;
+      }
+      .tool-box > a.active{
+        background-color: #aaa;
+      }
+      .tool-box .upper{
+        float: right;
+        position: absolute;
+        top: -5px;
+        font-size: 12px;
+        font-weight: bold;
+        right: 0;
+      }
+      .sub-panel{
+        height: 22px;
+        display: inline-block;
+        width: 8px;
+        vertical-align: middle;
+        cursor: pointer;
+        position: relative;
+      }
+      .sub-panel:hover{
+        background-color: #ddd;
+      }
+      .sub-panel::before{
+        content: '';
+        display: block;
+        width: 0;
+        height: 0;
+        border: 3px solid transparent;
+        border-top-color: #666;
+        margin-top: 10px;
+        margin-left: 1px;
+      }
+      .color-panel{
+        display: none;
+        position: absolute;
+        top: 22px;
+        left: -78px;
+        width: 164px;
+        height: 115px;
+        z-index: 10000;
+        background-color: #fff;
+        line-height: 16px;
+        cursor: default;
+      }
+      .sub-panel:hover .color-panel{
+        display: block;
+      }
+      .color-panel .color{
+        width: 12px;
+        height: 12px;
+        display: inline-block;
+        margin-left: 4px;
+        cursor: pointer;
+      }
+      .border-panel{
+        display: none;
+        position: absolute;
+        top: 22px;
+        left: -38px;
+        width: 80px;
+        z-index: 10000;
+        background-color: #fff;
+        line-height: 18px;
+        cursor: default;
+      }
+      .border-panel .border{
+        width: 18px;
+        height: 18px;
+        display: inline-block;
+        margin-left: 4px;
+        cursor: pointer;
+      }
+      .sub-panel:hover .border-panel{
+        display: block;
+      }
+      #font-size{
+        width: 100px;
+      }
+      #font-size-plus{
+        position: relative;
+      }
+      #font-size-minus{
+        position: relative;
+        font-size: 12px;
+      }
+      #font-color{
+        box-sizing: border-box;
+        border-bottom: 3px solid #000; 
+      }
+      #font-background-color{
+        font-size: 14px;
+        box-sizing: border-box;
+        border-bottom: 3px solid #fff; 
+      }
+      #border-color{
+        font-size: 14px;
+        box-sizing: border-box;
+        border-bottom: 3px solid #000; 
+      }
+      #font-bold{
+        font-weight: bold;
+      }
+      #font-italic{
+        font-style: italic;
+      }
+      #font-underline{
+        text-decoration: underline;
+      }
+      #border{
+
+      }
+      #text-align-left{
+
+      }
+      #text-align-center{
+
+      }
+      #text-align-right{
+
+      }
+      #merge{
+
+      }
+      #unmerge{
+
       }
 
     </style>
 </head>
 <body>
+    <div class="tool-box">
+      <select id="font-size">
+        <option value="6px">6</option>
+        <option value="8px">8</option>
+        <option value="9px">9</option>
+        <option value="10px">10</option>
+        <option value="11px">11</option>
+        <option value="12px">12</option>
+        <option value="14px" selected>14</option>
+        <option value="16px">16</option>
+        <option value="18px">18</option>
+        <option value="20px">20</option>
+        <option value="22px">22</option>
+        <option value="24px">24</option>
+        <option value="26px">26</option>
+        <option value="28px">28</option>
+        <option value="36px">36</option>
+        <option value="48px">48</option>
+        <option value="72px">72</option>
+      </select>
+      <a id="font-size-plus">A<span class="upper">+</span></a>
+      <a id="font-size-minus">A<span class="upper">-</span></a>
+      <a id="font-color">A</a><!-- 
+       --><div class="sub-panel">
+        <div class="panel color-panel font-color-panel"></div>
+      </div>
+      <a id="font-background-color" class="iconfont icon-paintbucket"></a><!-- 
+       --><div class="sub-panel">
+        <div class="panel color-panel background-color-panel"></div>
+      </div>
+
+      <a id="font-bold">B</a>
+      <a id="font-italic">I</a>
+      <a id="font-underline">U</a>
+
+      <a id="border" class="iconfont icon-borderall"></a><!-- 
+       --><div class="sub-panel">
+        <div class="panel border-panel">
+          <div class="border iconfont icon-borderclear"></div>
+          <div class="border iconfont icon-bordertop"></div>
+          <div class="border iconfont icon-borderright"></div>
+          <div class="border iconfont icon-borderbottom"></div>
+          <div class="border iconfont icon-borderleft"></div>
+          <div class="border iconfont icon-borderouter"></div>
+          <div class="border iconfont icon-borderall"></div>
+        </div>
+      </div>
+      <a id="border-color" class="iconfont icon-pen01"></a><!-- 
+       --><div class="sub-panel">
+        <div class="panel color-panel border-color-panel"></div>
+      </div>
+
+      <a id="text-align-left" class="iconfont icon-align-left"></a>
+      <a id="text-align-center" class="iconfont icon-align-center"></a>
+      <a id="text-align-right" class="iconfont icon-align-right"></a>
+
+      <a id="merge" class="iconfont icon-mergecell"></a>
+      <a id="unmerge" style="display: none;" class="iconfont icon-separatecell"></a>
+
+
+    </div>
+
     <input type="text" id="formulaEditor" style="width: 1000px">
     <div id="example"></div>
     <ul class="operate">
@@ -24,8 +232,9 @@
         <li onclick="chart && chart.create('bar')">柱状图</li>
         <li onclick="chart && chart.create('pie')">饼图</li>
     </ul>
+
     <script>
-        function ReportEditor () {          
+        function ReportEditor () {
           this.tableWidth = 26
           this.tableHeight = 100
           this.tabelHeaderHeight = 0
@@ -162,7 +371,7 @@
            * @Author   chenht
            * @DateTime 2018-06-14
            * @param    {object}   border {
-           *                        type: Number (边框类型 0: 无边框, 1: 上边框, 2: 右边框, 3: 下边框, 4: 左边框, 5: 周围边框, 6: 全部边框),
+           *                        type: Number (边框类型c框),
            *                        color: String (颜色)
            *                      }
            */
@@ -269,6 +478,91 @@
               }
             }, {skipMergedCell: true})
             this.hot.render();
+          },
+          /**
+           * 获取当前选中的单元格的样式
+           * @Author   chenht
+           * @DateTime 2018-09-12
+           */
+          getSelectedStyle () {
+            var style = {}
+            var styleNameList = ['fontSize', 'color', 'background', 'fontWeight', 'fontStyle', 'textDecoration', 'textAlign'];
+            var defaultValue = {
+              fontSize: '14px',
+              color: '#000000',
+              background: '#ffffff',
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              textDecoration: 'none',
+              textAlign: 'left'
+            }
+            styleNameList.forEach(v => style[v] = null);
+            function compareColor (v1, v2) {
+              v1 = v1.substr(1);
+              v2 = v2.substr(1);
+              if (v1.length === 3) {
+                v1 = v1.split('');
+                v1[5] = v1[4] = v1[2];
+                v1[3] = v1[2] = v1[1];
+                v1[1] = v1[0];
+                v1 = v1.join('');
+              }
+              if (v2.length === 3) {
+                v2 = v2.split('');
+                v2[5] = v2[4] = v2[2];
+                v2[3] = v2[2] = v2[1];
+                v2[1] = v2[0];
+                v2 = v2.join('');
+              }
+              return v1.toLowerCase() === v2.toLowerCase();
+            }
+
+            function compareStyle (name, v1, v2) {
+              v2 = v2 || defaultValue[name];
+              switch (name) {
+                case 'fontSize': {
+                  return parseFloat(v1) === parseFloat(v2);
+                }
+                case 'color': {
+                  return compareColor(v1, v2);
+                }
+                case 'background': {
+                  return compareColor(v1, v2);
+                }
+                case 'fontWeight': {
+                  return v1 === v2;
+                }
+                case 'fontStyle': {
+                  return v1 === v2;
+                }
+                case 'textDecoration': {
+                  return v1 === v2;
+                }
+                case 'textAlign': {
+                  return v1 === v2;
+                }
+              }
+            }
+            this.traversalSelectedCell((row, col, param) => {
+              var s = this.styleList[row + ',' + col];
+              if (!s) { return; }
+
+              styleNameList.forEach(v => {
+                if (style[v] === null) {
+                  if (s[v]) {
+                    style[v] = s[v];
+                  }
+                } else {
+                  if (style[v] && !compareStyle(v, style[v], s[v])) {
+                    delete style[v];
+                  }
+                }
+              });
+            });
+            styleNameList.forEach(v => {
+              style[v] = style[v] !== null ? style[v] : defaultValue[v];
+            })
+            return style;
           },
           /**
            * 在读取时填充空白的data
@@ -388,6 +682,7 @@
               coordList.push(coord);
             }, {skipMergedCell: true})
             document.getElementById('formulaEditor').value = coordList.join(',');
+            return coordList;
           },
           /**
            * 计算该单元格所引用的单元格列表
@@ -637,6 +932,10 @@
                     TD.style.color = getStyle(row, col, 'color') || '#000';
                     TD.style.backgroundColor = getStyle(row, col, 'background') || '#fff';
                     TD.style.fontSize = getStyle(row, col, 'fontSize') || '14px';
+                    TD.style.fontWeight = getStyle(row, col, 'fontWeight') || 'normal';
+                    TD.style.fontStyle = getStyle(row, col, 'fontStyle') || 'normal';
+                    TD.style.textAlign = getStyle(row, col, 'textAlign') || 'left';
+                    TD.style.textDecoration = getStyle(row, col, 'textDecoration') || 'none';
                     TD.style.borderTopColor = getStyle(row, col, 'borderTopColor') || ""
                     TD.style.borderLeftColor = getStyle(row, col, 'borderLeftColor') || ""
                     TD.style.borderBottomColor = getStyle(row, col, 'borderBottomColor') || ""
@@ -655,7 +954,19 @@
               },
               afterSelection: (r, c, r2, c2, preventScrolling, selectionLayerLevel) => {
                 // console.log(r, c, r2, c2, preventScrolling, selectionLayerLevel);
-                this.getSelectedCellCoord();
+                var selectedCells = this.getSelectedCellCoord();
+                var style = this.getSelectedStyle();
+                var firstSelected = selectedCells.length && this.hot.getSelected()[0];
+                if (style) {
+                  toolBox.fontSize = style.fontSize;
+                  toolBox.fontBold = style.fontWeight === 'bold';
+                  toolBox.fontItalic = style.fontStyle === 'italic';
+                  toolBox.textUnderline = style.textDecoration === 'underline';
+                  toolBox.textAlign = style.textAlign;
+                }
+                toolBox.showUnmerge = selectedCells.length === 1 && firstSelected[2] - firstSelected[0] > 0 && firstSelected[3] - firstSelected[1] > 0;
+                toolBox.showMerge = selectedCells.length > 0 && !toolBox.showUnmerge;
+                toolBox.rerender();
               }
             });
           }
@@ -663,6 +974,175 @@
 
         var reportEditor = new ReportEditor();
         reportEditor.load();
+
+        // 初始化工具条
+
+        var toolBox = {
+          fontSize: '14px',
+          background: '#ffffff',
+          color: '#000000',
+          borderColor: '#000000',
+          border: 6,
+          fontBold: false,
+          fontItalic: false,
+          showMerge: true,
+          showUnmerge: false,
+          textAlign: 'left',
+
+          setColor (e) {
+            e.stopPropagation();
+            reportEditor.setStyle({color: this.color});
+          },
+          setBackground (e) {
+            e.stopPropagation();
+            reportEditor.setStyle({background: this.background});
+          },
+          setfontSize () {
+            reportEditor.setStyle({fontSize: this.fontSize});
+          },
+          setFontWeight () {
+            reportEditor.setStyle({fontWeight: this.fontBold ? 'normal' : 'bold'});
+            this.fontBold = !this.fontBold;
+          },
+          setFontStyle () {
+            reportEditor.setStyle({fontStyle: this.fontItalic ? 'normal' : 'italic'});
+            this.fontItalic = !this.fontItalic;
+          },
+          setTextDecoration () {
+            reportEditor.setStyle({textDecoration: this.textUnderline ? 'none' : 'underline'});
+            this.textUnderline = !this.textUnderline;
+          },
+          setTextAlign () {
+            reportEditor.setStyle({textAlign: this.textAlign});
+          },
+          setBorder (e) {
+            e.stopPropagation();
+            reportEditor.setBorder({type: this.border, color: this.borderColor});
+          },
+          rerender () {       
+            var borderClassNameList = ['clear', 'top', 'right', 'bottom', 'left', 'outer', 'all'];
+
+            $('#border')[0].className = 'iconfont icon-border' + borderClassNameList[this.border];
+            $('#font-color')[0].style = 'border-color:' + this.color;
+            $('#font-background-color')[0].style = 'border-color:' + this.background;
+            $('#border-color')[0].style = 'border-color:' + this.borderColor;
+            $('#border-color')[0].style = 'border-color:' + this.borderColor;
+            $('#font-size')[0].value = this.fontSize;
+            $('#merge')[0].style = this.showMerge ? 'display:inline-block' : 'display:none';
+            $('#unmerge')[0].style = this.showUnmerge ? 'display:inline-block' : 'display:none';
+
+            $('#font-bold')[0].className = this.fontBold ? 'active' : '';
+            $('#font-italic')[0].className = this.fontItalic ? 'active' : '';
+            $('#font-underline')[0].className = this.textUnderline ? 'active' : '';
+
+            $('#text-align-left')[0].className = (this.textAlign === 'left' ? 'active' : '') + ' iconfont icon-align-left';
+            $('#text-align-center')[0].className = (this.textAlign === 'center' ? 'active' : '') + ' iconfont icon-align-center';
+            $('#text-align-right')[0].className = (this.textAlign === 'right' ? 'active' : '') + ' iconfont icon-align-right';
+          },
+          colorClickHandlerBuilder (dom) {
+            var type = dom;
+            var type = '';
+            if (dom.className.indexOf('font-color-panel') > -1) { type = 'color'; }
+            if (dom.className.indexOf('background-color-panel') > -1) { type = 'background'; }
+            if (dom.className.indexOf('border-color-panel') > -1) { type = 'borderColor'; }
+
+            return function (e) {
+              toolBox[type] = '#' + e.target.color;
+              dom.style = 'display:none';
+              setTimeout(function() {
+                dom.style = '';
+              }, 500);
+              toolBox.rerender();
+
+              switch (type) {
+                case 'color': { toolBox.setColor(e); return; }
+                case 'background': { toolBox.setBackground(e); return; }
+                case 'borderColor': { toolBox.setBorder(e); return; }
+              }
+            }
+          }
+        }
+
+        var defaultColorList = 
+          ['FFFFFF', '000000', 'D6D5D5', '415065', '5792C6', 'DC772E', '9B9B9B', 'EBB305', '416DB7', '6BA243',
+           'DFDFDF', '787878', 'C2C0C0', 'C7CCD4', 'D2D4D6', 'E7D4C6', 'DCDCDC', 'EBDFBE', 'CAD2E0', 'D2DDCA',
+           'C9C9C9', '545454', 'A3A0A0', 'A2ADBC', 'B0C8DD', 'E4BDA1', 'CBCBCB', 'EAD490', 'A8B8D6', 'B8D0A7',
+           'B2B2B2', '3C3C3C', '6F6B6B', '7D8DA5', '93B6D4', 'E1A67C', 'BBBBBB', 'EBCA60', '869FCB', '9DC285',
+           '9B9B9B', '232323', '373535', '2E3C4B', '2B6FA9', 'B8560D', '757575', 'B28805', '345220', '4F7A32',
+           '787878', '090909', '131212', '1E2632', '1B4A73', '7C3808', '4E4E4E', '785C05', '1C355F', '345220',
+           'C00000', 'FF0000', 'FFC000', 'FFFF00', '92D050', '00B050', '00B0F0', '0070C0', '002060', '7030A0']
+        var $ = document.querySelectorAll.bind(document);
+        $('.color-panel').forEach(v => {
+          var clickHandler = toolBox.colorClickHandlerBuilder(v);
+          defaultColorList.forEach(u => {
+            var color = document.createElement('div');
+            color.className = 'color';
+            color.color = u;
+            color.style = "background: #" + u;
+            color.addEventListener('click', clickHandler);
+            v.append(color);
+          })
+        })
+
+        $('.border-panel .border').forEach((v, i) => {
+          v.addEventListener('click', function (e) {
+            v.parentNode.style = 'display:none';
+            setTimeout(function() {
+              v.parentNode.style = '';
+            }, 500);
+            toolBox.rerender();
+            toolBox.border = i;
+            toolBox.rerender();
+            toolBox.setBorder(e);
+          })
+        })
+        $('#font-size')[0].addEventListener('change', e => {
+          toolBox.fontSize = $('#font-size')[0].value;
+          toolBox.setfontSize();
+        })
+
+        $('#font-color')[0].addEventListener('click', toolBox.setColor.bind(toolBox));
+        $('#font-background-color')[0].addEventListener('click', toolBox.setBackground.bind(toolBox));
+        $('#border-color')[0].addEventListener('click', toolBox.setfontSize.bind(toolBox));
+        $('#border')[0].addEventListener('click', toolBox.setBorder.bind(toolBox));
+
+        $('#merge')[0].addEventListener('click', e => {
+          reportEditor.hot.getPlugin('mergeCells').toggleMerge(reportEditor.hot.getSelectedRange()[0]);
+        })
+        $('#unmerge')[0].addEventListener('click', e => {
+          reportEditor.hot.getPlugin('mergeCells').toggleMerge(reportEditor.hot.getSelectedRange()[0]);
+        })
+        $('#font-bold')[0].addEventListener('click', e => {
+          toolBox.setFontWeight();
+          toolBox.rerender();
+        })
+        $('#font-italic')[0].addEventListener('click', e => {
+          toolBox.setFontStyle();
+          toolBox.rerender();
+        })
+        $('#font-underline')[0].addEventListener('click', e => {
+          toolBox.setTextDecoration();
+          toolBox.rerender();
+        })
+        $('#text-align-left')[0].addEventListener('click', e => {
+          toolBox.textAlign = 'left';
+          toolBox.setTextAlign();
+          toolBox.rerender();
+        })
+        $('#text-align-center')[0].addEventListener('click', e => {
+          toolBox.textAlign = 'center';
+          toolBox.setTextAlign();
+          toolBox.rerender();
+        })
+        $('#text-align-right')[0].addEventListener('click', e => {
+          toolBox.textAlign = 'right';
+          toolBox.setTextAlign();
+          toolBox.rerender();
+        })
+
+        $('.tool-box')[0].addEventListener('mousedown', e => e.stopPropagation());
+
+        toolBox.rerender();
 
     </script>
 </body>
