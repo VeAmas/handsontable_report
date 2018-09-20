@@ -1,0 +1,220 @@
+.ht_master tr > td {
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: cell;
+}
+
+.tool-box{
+  cursor: default;
+}
+
+.tool-box > a{
+  cursor: pointer;
+  font-family: 'Times New Roman';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  vertical-align: middle;
+}
+.tool-box > a:hover{
+  background-color: #ddd;
+}
+.tool-box > a.active{
+  background-color: #aaa;
+}
+.tool-box .upper{
+  float: right;
+  position: absolute;
+  top: -5px;
+  font-size: 12px;
+  font-weight: bold;
+  right: 0;
+}
+.sub-panel{
+  height: 22px;
+  display: inline-block;
+  width: 8px;
+  vertical-align: middle;
+  cursor: pointer;
+  position: relative;
+}
+.sub-panel:hover{
+  background-color: #ddd;
+}
+.sub-panel::before{
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border: 3px solid transparent;
+  border-top-color: #666;
+  margin-top: 10px;
+  margin-left: 1px;
+}
+.color-panel{
+  display: none;
+  position: absolute;
+  top: 22px;
+  left: -78px;
+  width: 164px;
+  height: 115px;
+  z-index: 10000;
+  background-color: #fff;
+  line-height: 16px;
+  cursor: default;
+}
+.sub-panel:hover .color-panel{
+  display: block;
+}
+.color-panel .color{
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  margin-left: 4px;
+  cursor: pointer;
+}
+.border-panel{
+  display: none;
+  position: absolute;
+  top: 22px;
+  left: -38px;
+  width: 80px;
+  z-index: 10000;
+  background-color: #fff;
+  line-height: 18px;
+  cursor: default;
+}
+.border-panel .border{
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  margin-left: 4px;
+  cursor: pointer;
+}
+.sub-panel:hover .border-panel{
+  display: block;
+}
+#font-size{
+  width: 100px;
+}
+#font-size-plus{
+  position: relative;
+}
+#font-size-minus{
+  position: relative;
+  font-size: 12px;
+}
+#font-color{
+  box-sizing: border-box;
+  border-bottom: 3px solid #000; 
+}
+#font-background-color{
+  font-size: 14px;
+  box-sizing: border-box;
+  border-bottom: 3px solid #fff; 
+}
+#border-color{
+  font-size: 14px;
+  box-sizing: border-box;
+  border-bottom: 3px solid #000; 
+}
+#font-bold{
+  font-weight: bold;
+}
+#font-italic{
+  font-style: italic;
+}
+#font-underline{
+  text-decoration: underline;
+}
+#border{
+
+}
+#text-align-left{
+
+}
+#text-align-center{
+
+}
+#text-align-right{
+
+}
+#merge{
+
+}
+#unmerge{
+
+}
+
+
+
+.modal{
+  position: absolute;
+  width: 600px;
+  left: 50%;
+  top: 200px;
+  max-height: 600px;
+  margin-left: -300px;
+  z-index: 1000;
+  background-color: #f00;
+}
+.modal-header{
+  padding: 8px;
+}
+.modal-header h3{
+  margin: 0;
+}
+.icon-closel{
+  font-size: 20px;
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  cursor: pointer;
+}
+.modal-body .controls{
+  // padding-left: 100px;
+}
+.modal-body .controls-label{
+  float: left;
+  text-align: center;
+  display: inline-block;
+  width: 100px;
+  vertical-align: middle;
+}
+.modal-body .controls-content{
+  margin-left: 100px;
+}
+.modal-footer{
+  padding: 8px 16px;
+  text-align: right;
+}
+.modal-footer button{
+  border: none;
+  background-color: #fff;
+  outline: none;
+  cursor: pointer;
+  min-width: 72px;
+  padding: 4px;
+}
+
+#addChartModal{
+  display: none;
+}
+#addChartModal .xAxis, #addChartModal .yAxis{
+  width: 400px;
+  font-family: 'consolas';
+}
+#addChartModal .addAxis{
+  display: none;
+} 
+#addChartModal input.active{
+  background-color: #f00;
+} 
+#addChartModal .item:nth-last-child(1) .addAxis {
+  display: inline-block;
+}
+#addChartModal a {
+  cursor: pointer;
+}

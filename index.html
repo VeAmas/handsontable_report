@@ -9,158 +9,8 @@
     <script src="createCharts.js"></script>
     <script src="shunting-yard-algorithm.js"></script>
     <link rel="stylesheet" type="text/css" href="./font/iconfont.css">
-    <style type="text/css">
-      .ht_master tr > td {
-        white-space: nowrap;
-        overflow: hidden;
-        cursor: cell;
-      }
-    
-      .tool-box{
-        cursor: default;
-      }
+    <link rel="stylesheet" type="text/css" href="./style.css">
 
-      .tool-box > a{
-        cursor: pointer;
-        font-family: 'Times New Roman';
-        display: inline-block;
-        width: 22px;
-        height: 22px;
-        line-height: 22px;
-        text-align: center;
-        vertical-align: middle;
-      }
-      .tool-box > a:hover{
-        background-color: #ddd;
-      }
-      .tool-box > a.active{
-        background-color: #aaa;
-      }
-      .tool-box .upper{
-        float: right;
-        position: absolute;
-        top: -5px;
-        font-size: 12px;
-        font-weight: bold;
-        right: 0;
-      }
-      .sub-panel{
-        height: 22px;
-        display: inline-block;
-        width: 8px;
-        vertical-align: middle;
-        cursor: pointer;
-        position: relative;
-      }
-      .sub-panel:hover{
-        background-color: #ddd;
-      }
-      .sub-panel::before{
-        content: '';
-        display: block;
-        width: 0;
-        height: 0;
-        border: 3px solid transparent;
-        border-top-color: #666;
-        margin-top: 10px;
-        margin-left: 1px;
-      }
-      .color-panel{
-        display: none;
-        position: absolute;
-        top: 22px;
-        left: -78px;
-        width: 164px;
-        height: 115px;
-        z-index: 10000;
-        background-color: #fff;
-        line-height: 16px;
-        cursor: default;
-      }
-      .sub-panel:hover .color-panel{
-        display: block;
-      }
-      .color-panel .color{
-        width: 12px;
-        height: 12px;
-        display: inline-block;
-        margin-left: 4px;
-        cursor: pointer;
-      }
-      .border-panel{
-        display: none;
-        position: absolute;
-        top: 22px;
-        left: -38px;
-        width: 80px;
-        z-index: 10000;
-        background-color: #fff;
-        line-height: 18px;
-        cursor: default;
-      }
-      .border-panel .border{
-        width: 18px;
-        height: 18px;
-        display: inline-block;
-        margin-left: 4px;
-        cursor: pointer;
-      }
-      .sub-panel:hover .border-panel{
-        display: block;
-      }
-      #font-size{
-        width: 100px;
-      }
-      #font-size-plus{
-        position: relative;
-      }
-      #font-size-minus{
-        position: relative;
-        font-size: 12px;
-      }
-      #font-color{
-        box-sizing: border-box;
-        border-bottom: 3px solid #000; 
-      }
-      #font-background-color{
-        font-size: 14px;
-        box-sizing: border-box;
-        border-bottom: 3px solid #fff; 
-      }
-      #border-color{
-        font-size: 14px;
-        box-sizing: border-box;
-        border-bottom: 3px solid #000; 
-      }
-      #font-bold{
-        font-weight: bold;
-      }
-      #font-italic{
-        font-style: italic;
-      }
-      #font-underline{
-        text-decoration: underline;
-      }
-      #border{
-
-      }
-      #text-align-left{
-
-      }
-      #text-align-center{
-
-      }
-      #text-align-right{
-
-      }
-      #merge{
-
-      }
-      #unmerge{
-
-      }
-
-    </style>
 </head>
 <body>
     <div class="tool-box">
@@ -222,16 +72,45 @@
       <a id="merge" class="iconfont icon-mergecell"></a>
       <a id="unmerge" style="display: none;" class="iconfont icon-separatecell"></a>
 
-
+      <a id="add-chart" class="iconfont icon-chartnew" onclick="addChart.toModal()"></a>
     </div>
 
     <input type="text" id="formulaEditor" style="width: 1000px">
     <div id="example"></div>
-    <ul class="operate">
-        <li onclick="chart && chart.create('line')">折线图</li>
-        <li onclick="chart && chart.create('bar')">柱状图</li>
-        <li onclick="chart && chart.create('pie')">饼图</li>
-    </ul>
+
+    <div id="addChartModal" class="modal">
+      <div class="modal-header">
+        <h3>添加图表</h3>
+        <i class="iconfont icon-closel" onclick="addChart.clear();"></i>
+      </div>
+      <div class="modal-body">
+        <div class="controls">
+          <span class="controls-label">图表类型</span>
+          <div class="controls-content">
+            <select id="chart-type" onchange="addChart.changeChartType()">
+              <option value="line" selected>折线图</option>
+              <option value="bar">柱状图</option>
+              <option value="pie">饼图</option>
+            </select>
+          </div>
+        </div>
+        <div class="controls">
+          <span class="controls-label">x轴</span>
+          <div class="controls-content">
+            <input onclick="addChart.onAxisClick('x', 0)" class="xAxis">
+          </div>
+        </div>
+        <div class="controls">
+          <span class="controls-label">y轴</span>
+          <div class="controls-content">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="addChart.execute();">确认</button>
+        <button onclick="addChart.clear();">取消</button>
+      </div>
+    </div>
 
     <script>
         function ReportEditor () {
@@ -247,6 +126,7 @@
           this.paramList = []
           this.mergeCells = []
           this.cellReference = []
+          this.afterSelectionCallbackList = {}
         }
         ReportEditor.prototype = {
           // 获取某个单元格的DOM
@@ -964,9 +844,13 @@
                   toolBox.textUnderline = style.textDecoration === 'underline';
                   toolBox.textAlign = style.textAlign;
                 }
-                toolBox.showUnmerge = selectedCells.length === 1 && firstSelected[2] - firstSelected[0] > 0 && firstSelected[3] - firstSelected[1] > 0;
+                toolBox.showUnmerge = selectedCells.length === 1 && (firstSelected[2] !== firstSelected[0] || firstSelected[3] !== firstSelected[1]);
                 toolBox.showMerge = selectedCells.length > 0 && !toolBox.showUnmerge;
                 toolBox.rerender();
+
+                for (var key in this.afterSelectionCallbackList) {
+                  this.afterSelectionCallbackList[key]();
+                }
               }
             });
           }
@@ -1143,6 +1027,86 @@
         $('.tool-box')[0].addEventListener('mousedown', e => e.stopPropagation());
 
         toolBox.rerender();
+
+
+        // 模态框初始化
+        $('.modal').forEach(v => {
+          var header = v.querySelector('.modal-header');
+
+          var offset = {};
+          var isMousedown = false;
+          header.addEventListener('mousedown', e => {
+            offset.x = e.clientX - v.offsetLeft;
+            offset.y = e.clientY - v.offsetTop;
+            isMousedown = true;
+          })
+          document.addEventListener('mousemove', e => {
+            if (!isMousedown) {return}
+            var pos = {
+              x: e.clientX - offset.x,
+              y: e.clientY - offset.y
+            }
+            v.style.left = Math.min(window.innerWidth - 600, Math.max(0, pos.x)) + 300 + 'px';
+            v.style.top = Math.min(window.innerHeight - v.offsetHeight, Math.max(0, pos.y)) + 'px';
+          })
+          document.addEventListener('mouseup', e => {
+            isMousedown = false;
+          })
+        });
+
+        var addChart = {
+          yAxisCount: 0,
+          toModal () {
+            reportEditor.afterSelectionCallbackList.chartAxisClick = e => {
+              if (!this.currentAxis) { return; }
+              var input = $('#addChartModal .modal-body .' + this.currentAxis[0] + 'Axis')[this.currentAxis[1]];
+              input.value = reportEditor.getSelectedCellCoord()
+              $('#addChartModal input').forEach(v => v.className = v.className.replace(/active/g, ''));
+              console.log(this.currentAxis);
+            }
+            this.addAxisY();
+            $('#addChartModal')[0].style="display:block";
+          },
+          execute () {
+            chart.create($('#addChartModal select')[0].value)
+            addChart.clear();
+          },
+          clear () {
+            delete reportEditor.afterSelectionCallbackList.chartAxisClick;
+            $('#addChartModal')[0].style="";
+            $('#addChartModal input').forEach(v => v.value = '');
+            $('#addChartModal .item').forEach(v => v.remove());
+            $('#addChartModal select')[0].value = 'line';
+            $('#addChartModal .controls')[2].style = '';
+          },
+          addAxisY () {
+            var item = document.createElement('div');
+            item.className = "item";
+            item.innerHTML = `
+              <input type="text" onclick="addChart.onAxisClick('y', ${this.yAxisCount})" class="yAxis" />
+              <a class="removeAxis iconfont icon-minuscycleo"></a>
+              <a onclick="addChart.addAxisY()" class="addAxis iconfont icon-pluso"></a>
+            `
+            $('#addChartModal .modal-body .controls-content')[2].append(item)
+            this.yAxisCount++;
+          },
+          onAxisClick (type, index) {
+            addChart.currentAxis = [type, index];
+            var input = $('#addChartModal .modal-body .' + this.currentAxis[0] + 'Axis')[this.currentAxis[1]];
+            $('#addChartModal input').forEach(v => v.className = v.className.replace(/active/g, ''));
+            input.className += ' active';
+          },
+          changeChartType () {
+            if ($('#addChartModal select')[0].value === 'pie') {
+              $('#addChartModal .controls')[2].style = 'display:none';
+            } else {
+              $('#addChartModal .controls')[2].style = '';
+            }
+          },
+          addAxisYCallback () {
+
+          }
+        }
 
     </script>
 </body>
